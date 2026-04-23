@@ -8,7 +8,7 @@ using UnityEngine;
 
 public class KartController : MonoBehaviour
 {
-    private SpawnPointManager _spawnPointManager;
+    //private SpawnPointManager _spawnPointManager;
     public Transform kartModel;
     public Transform kartNormal;
     public Rigidbody sphere;
@@ -26,9 +26,11 @@ public class KartController : MonoBehaviour
     public Transform backWheels;
     public Transform steeringWheel;
 
+    [SerializeField] private Transform startPoint;
+
     public void Awake()
     {
-        _spawnPointManager = FindAnyObjectByType<SpawnPointManager>();
+        //_spawnPointManager = FindAnyObjectByType<SpawnPointManager>();
     }
 
     public void ApplyAcceleration(float input)
@@ -50,9 +52,13 @@ public class KartController : MonoBehaviour
     }
     public void Respawn()
     {
-        Vector3 pos = _spawnPointManager.SelectRandomSpawnpoint();
-        sphere.MovePosition(pos);
-        transform.position = pos - new Vector3(0, 0.4f, 0);
+        sphere.linearVelocity = Vector3.zero;
+        sphere.angularVelocity = Vector3.zero;
+
+        sphere.position = startPoint.position + Vector3.up * 0.5f;
+        transform.position = sphere.position;
+
+        transform.rotation = startPoint.rotation;
     }
     public void FixedUpdate()
     {
@@ -61,12 +67,14 @@ public class KartController : MonoBehaviour
         //Gravity
         sphere.AddForce(Vector3.down * gravity, ForceMode.Acceleration);
         //Follow Collider
-        transform.position = sphere.transform.position - new Vector3(0, 0.4f, 0);
+        transform.position = sphere.position;
 
         //Steering
         transform.eulerAngles = Vector3.Lerp(transform.eulerAngles, new Vector3(0, transform.eulerAngles.y + currentRotate, 0), Time.deltaTime * 5f);
-        Physics.Raycast(transform.position + (transform.up * .1f), Vector3.down, out RaycastHit hitOn, 1.1f, layerMask);
-        Physics.Raycast(transform.position + (transform.up * .1f), Vector3.down, out RaycastHit hitNear, 2.0f, layerMask);
+        if (Physics.Raycast(transform.position + (transform.up * .1f), Vector3.down, out RaycastHit hitNear, 2.0f, layerMask))
+        {
+            kartNormal.up = Vector3.Lerp(kartNormal.up, hitNear.normal, Time.deltaTime * 8.0f);
+        }
 
         //Normal Rotation
         kartNormal.up = Vector3.Lerp(kartNormal.up, hitNear.normal, Time.deltaTime * 8.0f);
